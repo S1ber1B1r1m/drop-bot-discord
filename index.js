@@ -10,7 +10,7 @@ const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  MessageFlags
+  MessageFlags,
 } = require("discord.js");
 
 const client = new Client({
@@ -35,12 +35,12 @@ const commands = [
       option
         .setName("ödül")
         .setDescription("Ödül adı / açıklaması")
-        .setRequired(true)
+        .setRequired(false)
     )
     .addStringOption((option) =>
       option
         .setName("resim")
-        .setDescription("Resim URL'si")
+        .setDescription("Resim veya GIF URL'si (opsiyonel)")
         .setRequired(false)
     )
     .addStringOption((option) =>
@@ -67,27 +67,28 @@ const rest = new REST({ version: "10" }).setToken(process.env.DISCORD_TOKEN);
 
 client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isChatInputCommand() && interaction.commandName === "drop") {
-    const reward = interaction.options.getString("ödül");
-    const imageUrl =
-      interaction.options.getString("resim") ||
-      "https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=1200&q=80";
-    const link = interaction.options.getString("link") || "https://example.com";
+    const reward = interaction.options.getString("ödül") || "Ödül";
+    const imageUrl = interaction.options.getString("resim");
+    const link = interaction.options.getString("link");
 
     const embed = new EmbedBuilder()
-      .setTitle("🎉 DROP AKTİF")
-      .setDescription(`Ödül: **${reward}**\n\nİlk KAP butonuna basan kazanır!`)
-      .setImage(imageUrl)
-      .setColor("#00d4ff")
-      .addFields(
-        { name: "Link", value: `[Ödüle git](${link})`, inline: false },
-        { name: "Durum", value: "KAP butonuna ilk basan kazanır", inline: false }
-      )
+      .setTitle("DROP BAŞLADI!")
+      .setDescription(`İlk butona basan kazanır!\n\nÖdül: **${reward}**`)
+      .setColor("#000000")
       .setTimestamp();
+
+    if (imageUrl) {
+      embed.setImage(imageUrl);
+    }
+
+    if (link) {
+      embed.addFields({ name: "Link", value: `[Ödüle git](${link})`, inline: false });
+    }
 
     const capButton = new ButtonBuilder()
       .setCustomId("drop_cap_button")
-      .setLabel("KAP")
-      .setStyle(ButtonStyle.Danger);
+      .setLabel("KAP!")
+      .setStyle(ButtonStyle.Success);
 
     const row = new ActionRowBuilder().addComponents(capButton);
 
@@ -128,32 +129,22 @@ client.on(Events.InteractionCreate, async (interaction) => {
     dropData.claimed = true;
     dropData.winnerId = interaction.user.id;
 
-    const winnerTag = `<@${interaction.user.id}>`;
-    const winnerUser = interaction.user;
-
-    const updatedEmbed = EmbedBuilder.from(interaction.message.embeds[0])
-      .setDescription(`Ödül: **${dropData.reward}**`)
-      .setFields(
-        { name: "Kazanan", value: winnerTag, inline: false },
-        { name: "Durum", value: "KAPILDI", inline: false }
-      )
-      .setColor("#00ff88");
-
     const closedButton = new ButtonBuilder()
       .setCustomId("drop_closed")
       .setLabel("KAPILDI")
-      .setStyle(ButtonStyle.Success)
+      .setStyle(ButtonStyle.Secondary)
       .setDisabled(true);
 
     const closedRow = new ActionRowBuilder().addComponents(closedButton);
 
     await interaction.update({
-      embeds: [updatedEmbed],
+      content: `DROP KAPANDI!\n\nKazanan: <@${interaction.user.id}>`,
+      embeds: [],
       components: [closedRow],
     });
 
     try {
-      await winnerUser.send(
+      await interaction.user.send(
         `🎉 Tebrikler! Drop'ta ilk kapan kişi oldun.\n\nÖdül: **${dropData.reward}**\n\nBu ödül sana DM üzerinden iletildi.`
       );
     } catch (error) {
