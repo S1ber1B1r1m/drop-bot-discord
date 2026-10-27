@@ -35,7 +35,7 @@ const commands = [
       option
         .setName("ödül")
         .setDescription("Ödül adı / açıklaması")
-        .setRequired(false)
+        .setRequired(true)
     )
     .addStringOption((option) =>
       option
@@ -73,7 +73,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     const embed = new EmbedBuilder()
       .setTitle("DROP BAŞLADI!")
-      .setDescription(`İlk butona basan kazanır!\n\nÖdül: **${reward}**`)
+      .setDescription("İlk butona basan kazanır!")
       .setColor("#000000")
       .setTimestamp();
 
